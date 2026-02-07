@@ -1,9 +1,9 @@
 const overlay = document.getElementById("startOverlay");
 const video = document.getElementById("bgVideo");
 const bg = document.getElementById("bg");
+const loading = document.getElementById("loadingMessage");
 
-// Note: Added 'media/' prefix to all your images
-// At the very top of your script.js
+// All your images
 const photos = [
   "media/bg1.jpg",
   "media/bg2.jpg",
@@ -22,36 +22,65 @@ const photos = [
   "media/bg15.jpg",
 ];
 
-// 1. CREATE AND CACHE IMAGES IMMEDIATELY
-const imageElements = photos.map((src, i) => {
+// 1️⃣ Pre-create hidden image elements for smooth animations
+const imageElements = photos.map((src) => {
   const img = document.createElement("img");
   img.src = src;
-  img.style.display = "none"; // Hide them initially
+  img.style.display = "none"; // hide initially
   bg.appendChild(img);
   return img;
 });
 
+// Click handler
 overlay.addEventListener("click", () => {
-  overlay.style.opacity = 0;
+  // hide overlay text and show loading
+  overlay.querySelector("h1").style.display = "none";
+  overlay.querySelector("p").style.display = "none";
+  loading.style.display = "block";
 
-  setTimeout(() => {
-    overlay.style.display = "none";
-    video.play();
+  // preload video
+  const videoPromise = new Promise((resolve) => {
+    video.oncanplaythrough = resolve;
+    video.load();
+  });
 
-    // 2. TRIGGER ANIMATIONS INSTANTLY
-    imageElements.forEach((img, i) => {
-      img.style.display = "block"; // Show them
-      img.style.top = Math.random() * 80 + "vh";
-      img.style.left = "-250px"; // Start off-screen
+  // preload images
+  const imagePromises = imageElements.map(
+    (img) =>
+      new Promise((resolve) => {
+        if (img.complete) resolve();
+        else img.onload = resolve;
+      }),
+  );
 
-      const isMobile = window.innerWidth <= 768;
-      img.style.animationDuration = isMobile
-        ? 8 + Math.random() * 4 + "s"
-        : 15 + Math.random() * 10 + "s";
+  // wait until everything is loaded
+  Promise.all([videoPromise, ...imagePromises]).then(() => {
+    // fade out overlay
+    overlay.style.transition = "opacity 0.5s";
+    overlay.style.opacity = 0;
 
-      img.style.animationDelay = i * 1.2 + "s"; // Shorter delay between spawns
-    });
-  }, 400); // Reduced delay for snappier feel
+    setTimeout(() => {
+      overlay.style.display = "none";
+      loading.style.display = "none";
+
+      // start video
+      video.play();
+
+      // show and animate images
+      imageElements.forEach((img, i) => {
+        img.style.display = "block";
+        img.style.top = Math.random() * 80 + "vh";
+        img.style.left = "-250px";
+
+        const isMobile = window.innerWidth <= 768;
+        img.style.animationDuration = isMobile
+          ? 8 + Math.random() * 4 + "s"
+          : 15 + Math.random() * 10 + "s";
+
+        img.style.animationDelay = i * 0.5 + "s";
+      });
+    }, 500); // match fade
+  });
 });
 
 // ===== Buttons logic =====
@@ -61,13 +90,11 @@ const playArea = document.getElementById("playArea");
 const message = document.getElementById("message");
 const contentWrap = document.getElementById("contentWrap");
 
+// No button dodge
 const dodge = () => {
   const maxX = playArea.clientWidth - noBtn.clientWidth;
   const maxY = playArea.clientHeight - noBtn.clientHeight;
-
-  // Remove initial centering transform so the random positioning works
   noBtn.style.transform = "translate(0, 0)";
-
   noBtn.style.left = Math.random() * maxX + "px";
   noBtn.style.top = Math.random() * maxY + "px";
 };
@@ -78,12 +105,12 @@ noBtn.addEventListener("touchstart", (e) => {
   dodge();
 });
 
+// Yes button hearts
 yesBtn.addEventListener("click", () => {
   contentWrap.style.display = "none";
   playArea.style.display = "none";
   message.style.display = "block";
 
-  // Heart explosion
   for (let i = 0; i < 50; i++) {
     setTimeout(() => {
       const heart = document.createElement("div");
