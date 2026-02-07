@@ -3,33 +3,6 @@ const video = document.getElementById("bgVideo");
 const bg = document.getElementById("bg");
 const loading = document.getElementById("loadingMessage");
 
-// ===== Progress bar =====
-const progressContainer = document.createElement("div");
-progressContainer.style.width = "80%";
-progressContainer.style.height = "20px";
-progressContainer.style.background = "#ccc";
-progressContainer.style.borderRadius = "10px";
-progressContainer.style.margin = "10px auto";
-progressContainer.style.overflow = "hidden";
-progressContainer.style.display = "none"; // hide initially
-overlay.appendChild(progressContainer);
-
-const progressBar = document.createElement("div");
-progressBar.style.width = "0%";
-progressBar.style.height = "100%";
-progressBar.style.background = "#00f";
-progressBar.style.transition = "width 0.2s";
-progressContainer.appendChild(progressBar);
-
-const progressText = document.createElement("div");
-progressText.style.textAlign = "center";
-progressText.style.color = "blue";
-progressText.style.fontWeight = "bold";
-progressText.style.marginTop = "5px";
-progressText.innerText = "0%";
-progressText.style.display = "none"; // hide initially
-overlay.appendChild(progressText);
-
 // All your images
 const photos = [
   "media/bg1.jpg",
@@ -49,83 +22,46 @@ const photos = [
   "media/bg15.jpg",
 ];
 
-// 1️⃣ Pre-create hidden image elements
+// 1️⃣ Pre-create hidden image elements for smooth animations
 const imageElements = photos.map((src) => {
-  const img = new Image();
+  const img = document.createElement("img");
   img.src = src;
   img.style.display = "none"; // hide initially
   bg.appendChild(img);
   return img;
 });
 
-// Preload video immediately
-video.load();
-
-// ===== Track progress =====
-let loadedCount = 0;
-const totalCount = imageElements.length + 1; // images + video
-
-function updateProgress() {
-  const percent = Math.floor((loadedCount / totalCount) * 100);
-  progressBar.style.width = percent + "%";
-  progressText.innerText = percent + "%";
-}
-
-// Video loaded
-video.oncanplaythrough = () => {
-  loadedCount++;
-  updateProgress();
-};
-
-// Images loaded
-imageElements.forEach((img) => {
-  if (img.complete) {
-    loadedCount++;
-    updateProgress();
-  } else {
-    img.onload = () => {
-      loadedCount++;
-      updateProgress();
-    };
-  }
-});
-
-// ===== Overlay click =====
+// Click handler
 overlay.addEventListener("click", () => {
-  // hide overlay text
+  // hide overlay text and show loading
   overlay.querySelector("h1").style.display = "none";
   overlay.querySelector("p").style.display = "none";
-
-  // show loading bar
-  progressContainer.style.display = "block";
-  progressText.style.display = "block";
   loading.style.display = "block";
 
-  // Wait until all media loaded
-  const allPromises = [
-    ...imageElements.map(
-      (img) =>
-        new Promise((resolve) => {
-          if (img.complete) resolve();
-          else img.onload = resolve;
-        }),
-    ),
-    new Promise((resolve) => {
-      if (video.readyState >= 4) resolve();
-      else video.oncanplaythrough = resolve;
-    }),
-  ];
+  // preload video
+  const videoPromise = new Promise((resolve) => {
+    video.oncanplaythrough = resolve;
+    video.load();
+  });
 
-  Promise.all(allPromises).then(() => {
-    // fade overlay
+  // preload images
+  const imagePromises = imageElements.map(
+    (img) =>
+      new Promise((resolve) => {
+        if (img.complete) resolve();
+        else img.onload = resolve;
+      }),
+  );
+
+  // wait until everything is loaded
+  Promise.all([videoPromise, ...imagePromises]).then(() => {
+    // fade out overlay
     overlay.style.transition = "opacity 0.5s";
     overlay.style.opacity = 0;
 
     setTimeout(() => {
       overlay.style.display = "none";
       loading.style.display = "none";
-      progressContainer.style.display = "none";
-      progressText.style.display = "none";
 
       // start video
       video.play();
@@ -143,7 +79,7 @@ overlay.addEventListener("click", () => {
 
         img.style.animationDelay = i * 0.5 + "s";
       });
-    }, 500);
+    }, 500); // match fade
   });
 });
 
@@ -162,6 +98,7 @@ const dodge = () => {
   noBtn.style.left = Math.random() * maxX + "px";
   noBtn.style.top = Math.random() * maxY + "px";
 };
+
 noBtn.addEventListener("mouseenter", dodge);
 noBtn.addEventListener("touchstart", (e) => {
   e.preventDefault();
