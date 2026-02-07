@@ -2,7 +2,7 @@ const overlay = document.getElementById("startOverlay");
 const video = document.getElementById("bgVideo");
 const bg = document.getElementById("bg");
 const loading = document.getElementById("loadingMessage");
-const topLink = document.getElementById("topLink"); // Grab the extra link
+const topLink = document.getElementById("topLink");
 
 const photos = [
   "media/bg1.jpg",
@@ -22,69 +22,72 @@ const photos = [
   "media/bg15.jpg",
 ];
 
+// 1. Create images immediately but keep them hidden
 const imageElements = photos.map((src) => {
   const img = document.createElement("img");
   img.src = src;
   img.style.display = "none";
-  img.style.position = "absolute";
   bg.appendChild(img);
   return img;
 });
 
 overlay.addEventListener("click", () => {
-  // 1. Hide the annoying top left link immediately
-  if (topLink) topLink.style.display = "none";
+  // Remove the extra top link
+  if (topLink) topLink.remove();
 
+  // Show loading state
   overlay.querySelector("h1").style.display = "none";
   overlay.querySelector("p").style.display = "none";
   loading.style.display = "block";
 
-  const videoPromise = new Promise((resolve) => {
-    video.oncanplaythrough = resolve;
+  // Preload logic
+  const videoPromise = new Promise((res) => {
+    video.oncanplaythrough = res;
     video.load();
   });
 
   const imagePromises = imageElements.map(
     (img) =>
-      new Promise((resolve) => {
-        if (img.complete) resolve();
-        else img.onload = resolve;
-        img.onerror = resolve; // Continue even if one image fails
+      new Promise((res) => {
+        if (img.complete) res();
+        else img.onload = res;
+        img.onerror = res;
       }),
   );
 
   Promise.all([videoPromise, ...imagePromises]).then(() => {
-    overlay.style.transition = "opacity 0.5s";
     overlay.style.opacity = 0;
-
     setTimeout(() => {
       overlay.style.display = "none";
       video.play();
 
+      // Start the one-by-one parade
       imageElements.forEach((img, i) => {
         img.style.display = "block";
 
-        // Randomize size so they don't look like a stack of identical images
-        const randomWidth = Math.floor(Math.random() * (250 - 150 + 1)) + 150;
+        // Randomize size and vertical position
+        const randomWidth = Math.floor(Math.random() * 80) + 140;
         img.style.width = randomWidth + "px";
-
-        // Spread them out vertically (0% to 90% of screen height)
-        img.style.top = Math.random() * 90 + "vh";
+        img.style.top = Math.random() * 85 + "vh";
         img.style.left = "-300px";
 
         const isMobile = window.innerWidth <= 768;
-        img.style.animationDuration = isMobile
-          ? 6 + Math.random() * 4 + "s"
-          : 12 + Math.random() * 8 + "s";
 
-        // Staggered delay so they fly in one by one
-        img.style.animationDelay = i * 0.8 + "s";
+        // VERY SLOW SPEEDS
+        const duration = isMobile
+          ? 12 + Math.random() * 8 + "s" // Mobile: 12-20s
+          : 25 + Math.random() * 15 + "s"; // Desktop: 25-40s
+
+        img.style.animationDuration = duration;
+
+        // 3-second stagger prevents bunching
+        img.style.animationDelay = i * 3 + "s";
       });
-    }, 500);
+    }, 600);
   });
 });
 
-// ===== Buttons logic =====
+// ===== Button Logic =====
 const noBtn = document.getElementById("noBtn");
 const yesBtn = document.getElementById("yesBtn");
 const playArea = document.getElementById("playArea");
@@ -118,9 +121,8 @@ yesBtn.addEventListener("click", () => {
       heart.style.left = Math.random() * 100 + "vw";
       heart.style.top = "100vh";
       heart.style.fontSize = 15 + Math.random() * 30 + "px";
-      heart.style.animationDelay = Math.random() * 2 + "s";
       document.body.appendChild(heart);
-      setTimeout(() => heart.remove(), 4000);
-    }, i * 40);
+      setTimeout(() => heart.remove(), 3000);
+    }, i * 50);
   }
 });
