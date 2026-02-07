@@ -4,22 +4,31 @@ const bg = document.getElementById("bg");
 const loading = document.getElementById("loadingMessage");
 
 // ===== Progress bar =====
-const progressBarContainer = document.createElement("div");
-progressBarContainer.style.width = "80%";
-progressBarContainer.style.height = "10px";
-progressBarContainer.style.background = "#ccc";
-progressBarContainer.style.borderRadius = "5px";
-progressBarContainer.style.margin = "10px auto";
-progressBarContainer.style.overflow = "hidden";
-progressBarContainer.style.display = "none";
-overlay.appendChild(progressBarContainer);
+const progressContainer = document.createElement("div");
+progressContainer.style.width = "80%";
+progressContainer.style.height = "20px";
+progressContainer.style.background = "#ccc";
+progressContainer.style.borderRadius = "10px";
+progressContainer.style.margin = "10px auto";
+progressContainer.style.overflow = "hidden";
+progressContainer.style.display = "none"; // hide initially
+overlay.appendChild(progressContainer);
 
 const progressBar = document.createElement("div");
 progressBar.style.width = "0%";
 progressBar.style.height = "100%";
 progressBar.style.background = "#00f";
 progressBar.style.transition = "width 0.2s";
-progressBarContainer.appendChild(progressBar);
+progressContainer.appendChild(progressBar);
+
+const progressText = document.createElement("div");
+progressText.style.textAlign = "center";
+progressText.style.color = "blue";
+progressText.style.fontWeight = "bold";
+progressText.style.marginTop = "5px";
+progressText.innerText = "0%";
+progressText.style.display = "none"; // hide initially
+overlay.appendChild(progressText);
 
 // All your images
 const photos = [
@@ -49,12 +58,18 @@ const imageElements = photos.map((src) => {
   return img;
 });
 
-// ===== Preload video immediately =====
+// Preload video immediately
 video.load();
 
 // ===== Track progress =====
 let loadedCount = 0;
 const totalCount = imageElements.length + 1; // images + video
+
+function updateProgress() {
+  const percent = Math.floor((loadedCount / totalCount) * 100);
+  progressBar.style.width = percent + "%";
+  progressText.innerText = percent + "%";
+}
 
 // Video loaded
 video.oncanplaythrough = () => {
@@ -75,11 +90,6 @@ imageElements.forEach((img) => {
   }
 });
 
-function updateProgress() {
-  const percent = Math.floor((loadedCount / totalCount) * 100);
-  progressBar.style.width = percent + "%";
-}
-
 // ===== Overlay click =====
 overlay.addEventListener("click", () => {
   // hide overlay text
@@ -87,7 +97,8 @@ overlay.addEventListener("click", () => {
   overlay.querySelector("p").style.display = "none";
 
   // show loading bar
-  progressBarContainer.style.display = "block";
+  progressContainer.style.display = "block";
+  progressText.style.display = "block";
   loading.style.display = "block";
 
   // Wait until all media loaded
@@ -113,7 +124,8 @@ overlay.addEventListener("click", () => {
     setTimeout(() => {
       overlay.style.display = "none";
       loading.style.display = "none";
-      progressBarContainer.style.display = "none";
+      progressContainer.style.display = "none";
+      progressText.style.display = "none";
 
       // start video
       video.play();
