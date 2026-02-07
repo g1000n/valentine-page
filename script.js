@@ -2,8 +2,8 @@ const overlay = document.getElementById("startOverlay");
 const video = document.getElementById("bgVideo");
 const bg = document.getElementById("bg");
 const loading = document.getElementById("loadingMessage");
+const topLink = document.getElementById("topLink"); // Grab the extra link
 
-// All your images
 const photos = [
   "media/bg1.jpg",
   "media/bg2.jpg",
@@ -22,64 +22,65 @@ const photos = [
   "media/bg15.jpg",
 ];
 
-// 1️⃣ Pre-create hidden image elements for smooth animations
 const imageElements = photos.map((src) => {
   const img = document.createElement("img");
   img.src = src;
-  img.style.display = "none"; // hide initially
+  img.style.display = "none";
+  img.style.position = "absolute";
   bg.appendChild(img);
   return img;
 });
 
-// Click handler
 overlay.addEventListener("click", () => {
-  // hide overlay text and show loading
+  // 1. Hide the annoying top left link immediately
+  if (topLink) topLink.style.display = "none";
+
   overlay.querySelector("h1").style.display = "none";
   overlay.querySelector("p").style.display = "none";
   loading.style.display = "block";
 
-  // preload video
   const videoPromise = new Promise((resolve) => {
     video.oncanplaythrough = resolve;
     video.load();
   });
 
-  // preload images
   const imagePromises = imageElements.map(
     (img) =>
       new Promise((resolve) => {
         if (img.complete) resolve();
         else img.onload = resolve;
+        img.onerror = resolve; // Continue even if one image fails
       }),
   );
 
-  // wait until everything is loaded
   Promise.all([videoPromise, ...imagePromises]).then(() => {
-    // fade out overlay
     overlay.style.transition = "opacity 0.5s";
     overlay.style.opacity = 0;
 
     setTimeout(() => {
       overlay.style.display = "none";
-      loading.style.display = "none";
-
-      // start video
       video.play();
 
-      // show and animate images
       imageElements.forEach((img, i) => {
         img.style.display = "block";
-        img.style.top = Math.random() * 80 + "vh";
-        img.style.left = "-250px";
+
+        // Randomize size so they don't look like a stack of identical images
+        const randomWidth = Math.floor(Math.random() * (250 - 150 + 1)) + 150;
+        img.style.width = randomWidth + "px";
+
+        // Spread them out vertically (0% to 90% of screen height)
+        img.style.top = Math.random() * 90 + "vh";
+        img.style.left = "-300px";
 
         const isMobile = window.innerWidth <= 768;
         img.style.animationDuration = isMobile
-          ? 8 + Math.random() * 4 + "s"
-          : 15 + Math.random() * 10 + "s";
+          ? 6 + Math.random() * 4 + "s"
+          : 12 + Math.random() * 8 + "s";
 
-        img.style.animationDelay = i * 0.5 + "s";
+        // Staggered delay so they fly in one by one
+        img.style.animationDelay = i * 0.8 + "s";
       });
-    }, 500); // match fade
+    }, 500);
   });
 });
 
@@ -90,7 +91,6 @@ const playArea = document.getElementById("playArea");
 const message = document.getElementById("message");
 const contentWrap = document.getElementById("contentWrap");
 
-// No button dodge
 const dodge = () => {
   const maxX = playArea.clientWidth - noBtn.clientWidth;
   const maxY = playArea.clientHeight - noBtn.clientHeight;
@@ -105,23 +105,22 @@ noBtn.addEventListener("touchstart", (e) => {
   dodge();
 });
 
-// Yes button hearts
 yesBtn.addEventListener("click", () => {
   contentWrap.style.display = "none";
   playArea.style.display = "none";
   message.style.display = "block";
 
-  for (let i = 0; i < 50; i++) {
+  for (let i = 0; i < 60; i++) {
     setTimeout(() => {
       const heart = document.createElement("div");
       heart.className = "heart";
       heart.innerHTML = "❤";
       heart.style.left = Math.random() * 100 + "vw";
       heart.style.top = "100vh";
-      heart.style.fontSize = 15 + Math.random() * 20 + "px";
-      heart.style.animationDelay = Math.random() * 1.5 + "s";
+      heart.style.fontSize = 15 + Math.random() * 30 + "px";
+      heart.style.animationDelay = Math.random() * 2 + "s";
       document.body.appendChild(heart);
-      setTimeout(() => heart.remove(), 3000);
-    }, i * 50);
+      setTimeout(() => heart.remove(), 4000);
+    }, i * 40);
   }
 });
